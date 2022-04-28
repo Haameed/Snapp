@@ -1,0 +1,33 @@
+---
+- hosts : master
+  become: yes 
+  remote_user: hamed 
+  gather_facts: no 
+  tasks: 
+  - name: enableing kubelet 
+    service: 
+      name: kubelet 
+      enabled: yes 
+    
+  - name: pulling kubeadm images 
+    shell: kubeadm config images pull
+  - name: initiating cluster 
+    shell: |
+       kubeadm init --pod-network-cidr=192.168.0.0/16
+
+  - name: createing ckube config file 
+    shell: | 
+       mkdir -p $HOME/.kube
+       cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+       sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  - name: instaling CNI ( calico ) 
+    shell: | 
+       kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml 
+       kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+
+  - name : copy join command 
+    shell: kubeadm token create --print-join-command 
+    register: join_command
+    
+  - name: Copy join command to local file.
+    local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="/tmp/join_command" 
