@@ -1,0 +1,16 @@
+---
+- hosts : workers
+  become: yes 
+  remote_user: hamed 
+  gather_facts: no 
+  tasks: 
+  - name: Copy join command to worker nodes.
+    copy:
+      src: /tmp/join_command
+      dest: /tmp/join_command
+       mode: 0777   
+  - name: Join the Worker nodes to the cluster 
+    command: sh /tmp/join_command
+    register: join_status
+  - debug:
+     msg: "{{ join_status.stdout }}"
