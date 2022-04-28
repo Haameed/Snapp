@@ -1,0 +1,48 @@
+---
+- hosts : "master, workers"
+  become: yes 
+  remote_user: hamed 
+  gather_facts: no 
+  tasks: 
+   - name: add kubernetes and docker repo 
+     shell: | 
+       curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+       echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+       curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+       add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+       apt update 
+   - name: install docker and kubernetes packages 
+     apt: 
+      name: "{{ item }}"
+      state: present
+     with_items: 
+      - kubectl 
+      - kubelet
+      - kubeadm 
+      - containerd.io
+      - docker-ce
+      - docker-ce-cli  
+   - name:  changing cgroup to systemd 
+     shell: |
+       echo '{"exec-opts": ["native.cgroupdriver=systemd"], "log-driver": "json-file", "log-opts": {"max-size": "100m"}, "storage-driver": "overlay2"}' > /etc/docker/daemon.json 
+       systemctl restart docker 
+   - name: enable docker 
+     service:
+      name: docker
+      enabled: yes 
+   - name: disable swap 
+     shell: | 
+        sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+        swapoff -a
+   - name: enable kernel modules 
+     shell: | 
+        modprobe overlay
+        modprobe br_netfilter
+        
+   - name: enabling iptables bridge call and ip forwarding
+     shell: |   
+       echo "net.bridge.bridge-nf-call-ip6tables = 1" >> /etc/sysctl.d/kubernetes.conf
+       echo "net.bridge.bridge-nf-call-iptables = 1" >> /etc/sysctl.d/kubernetes.conf
+       echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.d/kubernetes.conf
+       sysctl --system
+  
