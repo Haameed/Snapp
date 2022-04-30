@@ -1,0 +1,4 @@
+Flask==1.1.2
+Flask-Bcrypt==0.7.1
+pycparser==2.20
+requests
