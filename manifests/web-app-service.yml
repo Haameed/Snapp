@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webserver-service
+  namespace: hamed 
+spec:
+  selector:
+    app: webserver
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5000
+      targetPort: 5000
+      nodePort: 31000
+  externalTrafficPolicy: Local
+  type: NodePort
+      #  externalIPs:
+      #    - 188.121.120.65
+      #    - 188.121.121.27
