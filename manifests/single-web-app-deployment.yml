@@ -1,0 +1,22 @@
+kind: Deployment
+metadata:
+  labels:
+    app: webserver
+  name: webserver
+  namespace: hamed  
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webserver 
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      containers:
+      - image: snapp/flask-app:v2.0.0
+        name: webserver
+        imagePullPolicy: IfNotPresent
+        ports:
+         - containerPort: 5000
